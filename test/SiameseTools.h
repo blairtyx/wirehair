@@ -83,9 +83,9 @@ public:
     void Seed(uint64_t y, uint64_t x = 0)
     {
         State = 0;
-        Inc = (y << 1u) | 1u;
+        Inc = (y << 1u) | 1u; // left shift by and append one to the LSB
         Next();
-        State += x;
+        State += x; // increase state
         Next();
     }
 

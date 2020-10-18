@@ -57,6 +57,8 @@ static bool Test_EncoderProducesOriginals(
         }
 
         uint32_t bytesOut = 0;
+
+        // encode 
         WirehairResult encodeResult = wirehair_encode(encoder, originalBlockId, &block[0], blockBytes, &bytesOut);
         if (encodeResult != Wirehair_Success)
         {
@@ -523,9 +525,11 @@ static atomic<bool> TestFailed(false);
 
 static void TestN(uint64_t seed, int N, unsigned blockBytes)
 {
+    // initial pseudorandom number generator
     siamese::PCGRandom prng;
     prng.Seed(seed + N, blockBytes);
 
+    // memory init
     vector<uint8_t> message(N * blockBytes + 1);
     vector<uint8_t> block(blockBytes);
     vector<uint8_t> decodedMessageVector(N * blockBytes + 1);
@@ -701,9 +705,11 @@ static bool ReadmeExample()
 
 static bool Benchmark(unsigned N, unsigned packetBytes, unsigned trials)
 {
+    // initial pseudorandom number generator
     siamese::PCGRandom prng;
     prng.Seed(N, packetBytes);
-
+    
+    // memory init
     const unsigned kBlockBytes = packetBytes;
     const unsigned kMessageBytes = N * kBlockBytes;
 
@@ -713,14 +719,16 @@ static bool Benchmark(unsigned N, unsigned packetBytes, unsigned trials)
 
     memset(&message[0], 6, kMessageBytes);
 
-    uint64_t encode_create_sum = 0;
-    uint64_t runs = 0;
-    uint64_t extra_sum = 0;
-    uint64_t encode_sum = 0;
-    uint64_t decode_sum = 0;
-    uint64_t packets = 0;
-    uint64_t recover_sum = 0;
+    // time counter and excution flags
+    uint64_t encode_create_sum = 0; // encoder create time
+    uint64_t runs = 0; // run flag
+    uint64_t extra_sum = 0; // extra packet need to recovery
+    uint64_t encode_sum = 0; // encode time
+    uint64_t decode_sum = 0; // docode time
+    uint64_t packets = 0; // encoded packets
+    uint64_t recover_sum = 0; // recover time
 
+    // trials for iteration
     for (unsigned trial = 0; trial < trials; ++trial)
     {
         ++runs;
@@ -745,11 +753,11 @@ static bool Benchmark(unsigned N, unsigned packetBytes, unsigned trials)
             return false;
         }
 
-        encode_create_sum += t1 - t0;
+        encode_create_sum += t1 - t0; // encoder create time
 
         unsigned blockId = 0;
         unsigned needed = 0;
-        for (;;)
+        for (;;)// Encode
         {
             blockId++;
 
@@ -816,12 +824,15 @@ static bool Benchmark(unsigned N, unsigned packetBytes, unsigned trials)
 
         recover_sum += t8 - t7;
 
+
+        // free memeory
         wirehair_free(decoder);
         wirehair_free(encoder);
     }
 
     cout << "For N = " << N << " packets of " << packetBytes << " bytes:" << endl;
 
+    // testbench timing calculate
     uint64_t avg_encode_create_usec = encode_create_sum / runs;
 
     float encode_create_MBPS = 0.f;
@@ -830,7 +841,7 @@ static bool Benchmark(unsigned N, unsigned packetBytes, unsigned trials)
     }
 
     cout << "+ Average wirehair_encoder_create() time: " << avg_encode_create_usec << " usec (" << encode_create_MBPS << " MBPS)" << endl;
-    // wirehair_decoder_create() is super fast.  So is the decoder_becomes_encoder() most of the time
+        // wirehair_decoder_create() is super fast.  So is the decoder_becomes_encoder() most of the time
 
     uint64_t avg_encode_usec = encode_sum / packets;
     uint64_t avg_decode_usec = decode_sum / packets;
@@ -878,6 +889,7 @@ static const unsigned kBenchmarkNList[] = {
 
 int main()
 {
+    // initializaiton
     const WirehairResult initResult = wirehair_init();
 
     if (initResult != Wirehair_Success)
@@ -887,6 +899,7 @@ int main()
         return -1;
     }
 
+    // readme example test
     if (!ReadmeExample())
     {
         SIAMESE_DEBUG_BREAK();
@@ -894,11 +907,13 @@ int main()
         return -2;
     }
 
-#ifdef BENCHMARK_SHORT_LIST
+
+    //BenchMark with regard to N
+#ifdef BENCHMARK_SHORT_LIST // from pre-defined list
     for (unsigned i = 0; i < sizeof(kBenchmarkNList) / sizeof(kBenchmarkNList[0]); ++i)
     {
         const unsigned N = kBenchmarkNList[i];
-#else
+#else // or an iteration
     for (unsigned N = 2; N < 64000; N *= 2)
     {
 #endif
@@ -933,7 +948,7 @@ int main()
             return -4;
         }
 
-        //cout << "Test passed for N = " << N << endl;
+        cout << "Test passed for N = " << N << endl;
     }
 
     return 0;

@@ -29,7 +29,7 @@
 #include "wirehair.h"
 #include "WirehairCodec.h"
 
-#include <new> // std::nothrow
+#include <new> // std::nothrow 
 
 static bool m_init = false;
 
